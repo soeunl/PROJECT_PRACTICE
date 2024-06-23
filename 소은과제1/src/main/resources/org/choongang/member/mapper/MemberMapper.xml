@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.choongang.member.mapper.MemberMapper">
+    <resultMap id="memberMap" type="org.choongang.member.entities.Member">
+        <result column="USER_NO" property="userNo" />
+        <result column="EMAIL" property="email" />
+        <result column="PASSWORD" property="password" />
+        <result column="USER_NAME" property="userName" />
+        <result column="REG_DT" property="regDt" />
+        <result column="MOD_DT" property="modDt" />
+    </resultMap> <!-- DB 컬럼명과 맞추어 주기 위해 매핑 -->
+
+    <select id="exist" resultType="long">
+        SELECT COUNT(*) FROM MEMBER WHERE EMAIL=#{email}
+    </select>
+
+    <!-- resultType은 자료형, resultMap은 클래스 -->
+
+    <select id="get" resultMap="memberMap">
+        SELECT * FROM MEMBER WHERE EMAIL=#{email}
+    </select>
+
+    <insert id="register">
+        INSERT INTO MEMBER (USER_NO, EMAIL, PASSWORD, USER_NAME)
+            VALUES(SEQ_MEMBER.NEXTVAL, #{email}, #{password}, #{userName})
+    </insert>
+</mapper>
