@@ -75,7 +75,7 @@ public class HandlerAdapterImpl implements HandlerAdapter {
                     Matcher matcher2 = p2.matcher(request.getRequestURI());
                     while (matcher2.find()) {
                         for (int i = 0; i < matched.size(); i++) {
-                            pathVariables.put(matched.get(i), matcher2.group(i + 1));
+                            pathVariables.put(matched.get(i), matcher2.group(i + 1)); // 그룹화 되어 있는 메서드들을 가지고온다
                         }
                     }
                 }
@@ -111,7 +111,7 @@ public class HandlerAdapterImpl implements HandlerAdapter {
                 } else if (cls == HttpServletResponse.class) {
                     args.add(response);
                 } else if (cls == int.class) {
-                    args.add(Integer.parseInt(paramValue));
+                    args.add(Integer.parseInt(paramValue)); // 정수면 정수 형태의 Wrapper 클래스로 바꾸어라
                 } else if (cls == Integer.class) {
                     args.add(Integer.valueOf(paramValue));
                 } else if (cls == long.class) {
@@ -129,13 +129,13 @@ public class HandlerAdapterImpl implements HandlerAdapter {
                 } else if (cls == String.class) {
                     // 문자열인 경우
                     args.add(paramValue);
-                } else {
-                    // 기타는 setter를 체크해 보고 요청 데이터를 주입
+                } else { // 데이터 클래스..?
+                    // setter를 체크해 보고 요청 데이터를 주입
                     // 동적 객체 생성
                     Object paramObj = cls.getDeclaredConstructors()[0].newInstance();
                     for (Method _method : cls.getDeclaredMethods()) {
                         String name = _method.getName();
-                        if (!name.startsWith("set")) continue;
+                        if (!name.startsWith("set")) continue; // set이 아니면 건너뛰어라
 
                         char[] chars = name.replace("set", "").toCharArray();
                         chars[0] = Character.toLowerCase(chars[0]);
@@ -147,6 +147,7 @@ public class HandlerAdapterImpl implements HandlerAdapter {
                         Class clz = _method.getParameterTypes()[0];
                         // 자료형 변환 후 메서드 호출 처리
                         invokeMethod(paramObj,_method, value, clz, name);
+                        // invokeMethod() : 메서드를 동적으로 호출하고 값을 넣어줌
                     }
                     args.add(paramObj);
                 } // endif
@@ -188,7 +189,7 @@ public class HandlerAdapterImpl implements HandlerAdapter {
             // 현재 요청과 응답 객체를 이용하여 제어 흐름을 JSP 페이지로 넘겨줌
             
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e.getMessage()); // router 쪽에 있는 500으로 에러가 넘어감
         }
         /* 요청 메서드 호출 E */
     }

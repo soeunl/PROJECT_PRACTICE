@@ -18,12 +18,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class BeanContainer {
+public class BeanContainer { // 객체가 담겨있다!! // 객체를 관리하는 곳이 컨테이너
+    // 의존성 주입
     private static BeanContainer instance;
 
     private Map<String, Object> beans; // key는 문자열 타입, value는 객체 타입을 가짐
+    // 관리 객체를 Map형태로~
+    // 모든 객체를 다 담을 수 있게 하기 위해 Object로 함
 
-    private MapperProvider mapperProvider; // 마이바티스 매퍼 조회
+    private MapperProvider mapperProvider; // 마이바티스 mapper 조회
+    // mapper도 매번 요청이 들어올때마다 새롭게 갱신해야 함
 
     public BeanContainer() { // 생성자
         beans = new HashMap<>(); // beans 초기화, HashMap 객체 생성
@@ -56,17 +60,18 @@ public class BeanContainer {
                  *  이미 생성된 객체라면 생성된 객체로 활용
                  *  매 요청시마다 새로 만들어야 객체가 있는 경우 갱신 처리
                  *
-                 *  매 요청시 새로 갱신해야 하는 객체
+                 *  매 요청시 새로 갱신해야 하는 객체★★★
                  *      - HttpServletRequest
                  *      - HttpServletResponse
                  *      - HttpSession session
                  *      - Mybatis mapper 구현 객체
                  */
 
-                if (beans.containsKey(key)) {
-                    updateObject(beans.get(key));
-                    continue;
-                    // 같은 key를 가진 객체가 존재하면 updateObject 메서드를 호출하여 해당 객체를 업데이트
+                if (beans.containsKey(key)) { // 같은 key를 가진 객체가 존재하면 새로 생성하지 않고
+                    updateObject(beans.get(key)); // updateObject 메서드를 호출하여 해당 객체를 업데이트
+                    continue; 
+                    // updateObject() : 매번 갱신해야 할 객체를 업데이트 해주는 메서드
+
                 }
 
 
@@ -74,15 +79,17 @@ public class BeanContainer {
 
                 boolean isBean = false; // 초기화
                 for (Annotation anno : annotations) {
-                    if (anno instanceof Controller || anno instanceof RestController || anno instanceof Service || anno instanceof Component)  { // 반복문 안에서 anno가 Controller, RestController, Service, Component 중 하나의 인스턴스인지 확인
+                    if (anno instanceof Controller || anno instanceof RestController || anno instanceof Service || anno instanceof Component)  { // anno가 Controller, RestController, Service, Component 중 하나인지 확인 : 이것들이 포함되어 있으면 관리객체임. 싱글톤으로 관리하겠다,,?
                         isBean = true;
                         break;
                     }
                 }
                 // 컨테이너가 관리할 객체라면 생성자 매개변수의 의존성을 체크하고 의존성이 있다면 해당 객체를 생성하고 의존성을 해결한다.
+                // 모든 관리객체는 생성자를 하나만 정의해야 한다!! - 두개이면 얘가 뭘 쓸지 알기 어려움
                 if (isBean) {
                     Constructor con = clazz.getDeclaredConstructors()[0]; // 현재 클래스의 생성자 정보 가져오기
                     List<Object> objs = resolveDependencies(key, con);
+                    // resolveDependencies() : 의존성의 의존성을 체크해보면서 찾아서 해결해주는 메서드 (새로 생성하거나 이미 있으면 주입)
                     if (!beans.containsKey(key)) { // 같은 key를 가진 객체가 이미 beans 필드에 저장되어 있는지 확인하고, 없을 경우에 새로운 객체를 생성
                         Object obj = con.getParameterTypes().length == 0 ? con.newInstance() : con.newInstance(objs.toArray());
                         // getParameterTypes(): 생성자의 매개변수 타입 정보를 배열로 반환
@@ -91,8 +98,9 @@ public class BeanContainer {
                         // 이를 통해 BeanContainer 클래스는 key 를 통해 객체에 접근할 수 있게 됨
                     }
                 }
-
             }
+            
+            // 모든 관리객체는 생성자를 하나만 정의해야 한다!! 
 
 
 
@@ -149,9 +157,9 @@ public class BeanContainer {
 
         Class[] parameters = con.getParameterTypes(); // getParameterTypes(): 생성자의 매개변수 타입 정보를 배열로 반환하는 메서드
         if (parameters.length == 0) {
-            Object obj = con.newInstance(); // 만약 생성자의 매개변수가 없다면 con.newInstance() 를 호출하여 해당 클래스의 새로운 객체를 생성
+            Object obj = con.newInstance(); // 만약 생성자의 매개변수가 없다면 con.newInstance()를 호출하여 해당 클래스의 새로운 객체를 생성
             dependencies.add(obj); // dependencies에 추가
-        } else {
+        } else { // 의존성의 체크가 필요함
             for(Class clazz : parameters) { // 생성자 매개변수 타입을 clazz 변수에 할당
                 /**
                  * 인터페이스라면 마이바티스 매퍼일수 있으므로 매퍼로 조회가 되는지 체크합니다.
@@ -160,7 +168,7 @@ public class BeanContainer {
                   */
                 if (clazz.isInterface()) { // isInterface(): 해당 클래스가 인터페이스인지 확인하는 메서드
                     Object mapper = mapperProvider.getMapper(clazz); // 인터페이스라면 mapperProvider 객체를 이용하여 해당 인터페이스를 구현하는 클래스 객체를 가져옴
-                    if (mapper != null) { // null이 아니라면 dependencies에 추가
+                    if (mapper != null) { // null이 아니라면 dependencies에 mapper 추가 (모든 객체마다 mapper는 새로 만들어진다)
                         dependencies.add(mapper);
                         continue;
                     }
@@ -173,7 +181,7 @@ public class BeanContainer {
                     if (_con.getParameterTypes().length == 0) {
                         obj = _con.newInstance(); // 매개변수가 없다면 _con.newInstance() 를 호출하여 해당 클래스의 새로운 객체를 생성
                     } else {
-                        List<Object> deps = resolveDependencies(clazz.getName(), _con);
+                        List<Object> deps = resolveDependencies(clazz.getName(), _con); // 매개변수를 넣어서 객체를 만들어준다
                         obj = _con.newInstance(deps.toArray());
                     }
                 }
@@ -187,12 +195,12 @@ public class BeanContainer {
 
     private List<Class> getClassNames(String rootPath, String packageName) {
         List<Class> classes = new ArrayList<>();
-        List<File> files = getFiles(rootPath);
+        List<File> files = getFiles(rootPath); 
         for (File file : files) {
             String path = file.getAbsolutePath();
             String className = packageName + "." + path.replace(rootPath + File.separator, "").replace(".class", "").replace(File.separator, ".");
             try {
-                Class cls = Class.forName(className);
+                Class cls = Class.forName(className); // 클래스 이름을 가지고 클래스 파일을 만든다
                 classes.add(cls);
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();

@@ -24,7 +24,7 @@ public class HandlerMappingImpl implements HandlerMapping{
 
         for (Object item : items) {
             /** Type 애노테이션에서 체크 S */
-            // @RequestMapping, @GetMapping, @PostMapping, @PatchMapping, @PutMapping, @DeleteMapping
+            // @RequestMapping, @GetMapping, @PostMapping, @PatchMapping, @PutMapping, @DeleteMapping // 요청 처리에 관련된 애노테이션들
             if (isMatch(request,item.getClass().getDeclaredAnnotations(), false, null)) {
                 // 메서드 체크
                 // getDeclaredAnnotations() : 모든 애노테이션을 배열 형태로 반환, 특정 요소에 어떤 애노테이션이 선언되어 있는지 확인하는 데 사용
@@ -108,7 +108,7 @@ public class HandlerMappingImpl implements HandlerMapping{
                     }
                 } else {
                     List<String> matches = Arrays.stream(mappings) // mappings 배열을 문자열 스트림으로 변환
-                            .filter(s -> uri.startsWith(request.getContextPath() + s)).toList(); //  조건에 따라 URI 패턴 스트림을 필터링
+                            .filter(s -> uri.startsWith(request.getContextPath() + s)).toList(); // 조건에 따라 URI 패턴 스트림을 필터링
                             // 요청 URI의 시작 부분과 잠재적으로 일치하는 패턴을 필터링
                             // .toList(): 필터링된 스트림을 다시 List로 변환
                     if (!matches.isEmpty()) { // matches 목록이 비어 있는지 (일치하는 패턴이 없는지) 확인
